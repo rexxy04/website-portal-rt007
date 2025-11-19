@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase'; // Tambah import db
+import { doc, getDoc } from 'firebase/firestore'; // Tambah import firestore
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Header from '../components/Header';
 
 export default function LoginPage() {
@@ -20,9 +20,32 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Jika sukses, arahkan ke dashboard/home
-      router.push('/');
+      // 1. Login ke Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // 2. Cek Role di Firestore
+      // Kita cari dokumen user berdasarkan UID-nya
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        
+        // 3. Logika Redirect Berdasarkan Role
+        if (userData.role === 'admin') {
+          console.log("Login sebagai Admin");
+          router.push('/admin'); // Admin masuk dashboard
+        } else {
+          console.log("Login sebagai Warga");
+          router.push('/'); // Warga masuk home
+        }
+      } else {
+        // Jika user ada di Auth tapi belum ada datanya di Firestore (kasus jarang)
+        // Anggap sebagai warga biasa
+        router.push('/');
+      }
+
     } catch (err: any) {
       console.error(err);
       setError('Email atau password salah. Silakan coba lagi.');
@@ -31,6 +54,7 @@ export default function LoginPage() {
     }
   };
 
+  // ... (SISA KODE TAMPILAN JSX TETAP SAMA, TIDAK PERLU DIUBAH) ...
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -48,7 +72,6 @@ export default function LoginPage() {
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm bg-white p-8 rounded-xl shadow-lg border border-gray-100">
           <form className="space-y-6" onSubmit={handleLogin}>
             
-            {/* Alert Error */}
             {error && (
               <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
                 {error}
@@ -106,7 +129,7 @@ export default function LoginPage() {
 
           <p className="mt-10 text-center text-sm text-gray-500">
             Belum punya akun?{' '}
-            <a href="https://wa.me/6281234567890" className="font-semibold leading-6 text-green-600 hover:text-green-500">
+            <a href="#" className="font-semibold leading-6 text-green-600 hover:text-green-500">
               Hubungi Sekretaris RT
             </a>
           </p>

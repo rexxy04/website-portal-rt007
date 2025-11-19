@@ -1,72 +1,72 @@
 "use client";
 
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
-    createContext, 
-    useContext, 
-    useEffect, 
-    useState, 
-    ReactNode 
-} from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+  onAuthStateChanged, 
+  User 
+} from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase'; // Pastikan import db ada
 
-// Menggunakan path yang benar berdasarkan struktur folder Anda
-// (dari app/context/ ke app/lib/)
-import { auth } from '../lib/firebase'; 
+// Tipe data untuk User Profile di Firestore
+type UserProfile = {
+  nama?: string;
+  role?: 'admin' | 'warga';
+  blok?: string;
+}
 
-// Tipe untuk data yang akan ada di context
-type AuthContextType = {
-    user: User | null;
-    loading: boolean;
-};
+interface AuthContextType {
+  user: User | null;
+  userProfile: UserProfile | null; // Tambahan: Data profil dari DB
+  loading: boolean;
+}
 
-// Membuat Context dengan nilai default
-const AuthContext = createContext<AuthContextType>({ 
-    user: null, 
-    loading: true 
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  userProfile: null,
+  loading: true,
 });
 
-// 
-// INI ADALAH EXPORT 'AuthProvider' YANG DICARI
-// 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-    // Listener ini akan terpanggil setiap kali status auth berubah
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-        // Pengguna sedang login
-        setUser(user);
-        } else {
-        // Pengguna logout
-        setUser(null);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      
+      if (currentUser) {
+        // Jika user login, ambil data profilnya dari Firestore 'users' collection
+        try {
+          const docRef = doc(db, "users", currentUser.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            setUserProfile(docSnap.data() as UserProfile);
+          } else {
+            // Jika dokumen belum ada (user baru login pertama kali tapi belum didaftarkan admin)
+            setUserProfile({ role: 'warga' }); 
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          setUserProfile(null);
         }
-      // Selesai loading, kita sudah tahu status loginnya
-        setLoading(false);
+      } else {
+        setUserProfile(null);
+      }
+
+      setLoading(false);
     });
 
-    // Cleanup listener saat komponen di-unmount
     return () => unsubscribe();
-  }, []); // [] berarti useEffect ini hanya berjalan sekali saat mount
+  }, []);
 
-    const value = {
-    user,
-    loading,
-    };
-
-  // Kita "bungkus" children (seluruh aplikasi kita) dengan Provider ini
-  // Kita hanya tampilkan children jika loading sudah selesai
-    return (
-    <AuthContext.Provider value={value}>
-        {!loading && children}
+  return (
+    <AuthContext.Provider value={{ user, userProfile, loading }}>
+      {children}
     </AuthContext.Provider>
-    );
+  );
 };
 
-// 
-// INI ADALAH EXPORT 'useAuth'
-// 
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
