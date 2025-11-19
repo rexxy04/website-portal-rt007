@@ -1,182 +1,117 @@
 "use client";
 
-// Impor komponen-komponen baru kita
-import Header from '../components/Header'; // Navbar baru kita
-import Hero from '../components/Hero';     // Hero section baru kita
-
-// Impor komponen-komponen lama yang masih kita pakai
-import ActivityCard from '../components/ActivityCard';
-import QuickLinkCard from '../components/QuickLinkCard';
-import ScheduleItem from '../components/ScheduleItem';
-import OfficerCard from '../components/OfficerCard';
-
-import { useAuth } from '../context/authcontext';
+import { useState } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Header from '../components/Header';
 
-// ... (Semua 'mockData' dan 'Icon' Anda tetap sama di sini) ...
-// --- DATA TIRUAN (MOCK DATA) ---
-const mockActivities = [
-  { id: '1', title: 'Kerja Bakti Bulanan - Persiapan 17an', date: '10 Juli 2024' },
-  { id: '2', title: 'Rapat RT Bulanan (Online)', date: '5 Juli 2024' },
-  { id: '3', title: 'Pengumpulan Dana Qurban Idul Adha', date: '1 Juli 2024' },
-];
-const mockOfficers = [
-  { name: 'Bpk. H. Ahmad', position: 'Ketua RT 007', imageUrl: '/images/pak-rt.jpg' },
-  { name: 'Bpk. Budi Santoso', position: 'Wakil Ketua RT', imageUrl: '/images/pak-wakil.jpg' },
-  { name: 'Ibu Siti Aminah', position: 'Sekretaris', imageUrl: '/images/bu-sekretaris.jpg' },
-  { name: 'Ibu Wati', position: 'Bendahara', imageUrl: '/images/bu-bendahara.jpg' },
-];
-// ... (IconPlaceholder, WalletIcon, UsersIcon, mockSchedules, dll.) ...
-const IconPlaceholder = ({ size = 24 }: { size?: number }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10"></circle>
-    <line x1="12" y1="16" x2="12" y2="12"></line>
-    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-  </svg>
-);
-const mockSchedules = [
-  { 
-    id: 's1', 
-    date: '25', 
-    day: 'JUL', 
-    title: 'Siskamling Warga Blok A', 
-    description: 'Blok A (Bpk. Ahmad, Bpk. Budi, dst)', 
-    icon: <IconPlaceholder /> 
-  },
-  { 
-    id: 's2', 
-    date: '26', 
-    day: 'JUL', 
-    title: 'Siskamling Warga Blok B', 
-    description: 'Blok B (Bpk. Candra, Bpk. Dedi, dst)', 
-    icon: <IconPlaceholder /> 
-  },
-];
-const WalletIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
-    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
-    <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
-  </svg>
-);
-const UsersIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-    <circle cx="9" cy="7" r="4"/>
-    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-  </svg>
-);
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-// --- KOMPONEN UTAMA HOMEPAGE ---
-export default function HomePage() {
-  const { user, loading } = useAuth();
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Jika sukses, arahkan ke dashboard/home
+      router.push('/');
+    } catch (err: any) {
+      console.error(err);
+      setError('Email atau password salah. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      
-      {/* 1. Header (Navbar baru kita) */}
+    <div className="min-h-screen bg-gray-50">
       <Header />
+      
+      <div className="flex flex-col items-center justify-center px-6 py-12 lg:px-8 mt-10">
+        <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+          <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-green-900">
+            Masuk ke Portal Warga
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Silakan login menggunakan akun yang telah diberikan oleh Pengurus RT.
+          </p>
+        </div>
 
-      {/* 2. Hero Section (Gambar Latar baru kita) */}
-      <Hero />
-
-      {/* 3. Konten Utama */}
-      {/* PERHATIKAN INI:
-        -mt-16: Margin atas negatif untuk menarik konten ke atas
-                agar tumpang tindih (overlap) dengan Hero section.
-        relative z-10: Agar konten ini ada di atas Hero.
-      */}
-      <main className="relative z-10 max-w-4xl mx-auto p-4 md:p-6 space-y-8 -mt-16">
-
-        {/* Bagian "Bayar Iuran" (Tidak berubah) */}
-        {user && !loading && (
-          <Link href="/bayar-iuran" className="block w-full">
-            <div className="flex items-center justify-between p-4 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition-colors">
-              <div>
-                <h2 className="font-bold text-lg">Pembayaran Iuran</h2>
-                <p className="text-sm opacity-90">Cek status dan bayar iuran bulanan Anda.</p>
+        <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+          <form className="space-y-6" onSubmit={handleLogin}>
+            
+            {/* Alert Error */}
+            {error && (
+              <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
+                {error}
               </div>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
+            )}
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
+                Email Warga
+              </label>
+              <div className="mt-2">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                />
+              </div>
             </div>
-          </Link>
-        )}
 
-        {/* 3. Bagian Aktivitas Terbaru (Tidak berubah) */}
-        <section>
-          <ActivityCard activities={mockActivities} />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <QuickLinkCard 
-              title="Bayar Iuran"
-              description="Akses fitur iuran warga"
-              href={user ? "/bayar-iuran" : "/login"}
-              icon={<WalletIcon />}
-            />
-            <QuickLinkCard 
-              title="Data Warga"
-              description="Lihat direktori warga"
-              href="/data-warga"
-              icon={<UsersIcon />}
-            />
-            <QuickLinkCard 
-              title="Lapor Darurat"
-              description="Hubungi petugas RT"
-              href="/lapor-darurat"
-              icon={<IconPlaceholder />}
-            />
-          </div>
-        </section>
+            <div>
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
+                  Password
+                </label>
+              </div>
+              <div className="mt-2">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                />
+              </div>
+            </div>
 
-        {/* 4. Bagian Jadwal Kegiatan (Tidak berubah) */}
-        <section>
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Jadwal Kegiatan</h2>
-          <ul className="space-y-3">
-            {mockSchedules.map(item => (
-              <ScheduleItem 
-                key={item.id}
-                date={item.date}
-                day={item.day}
-                title={item.title}
-                description={item.description}
-                icon={item.icon}
-              />
-            ))}
-          </ul>
-        </section>
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full justify-center rounded-md bg-green-600 px-3 py-2.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Memproses...' : 'Masuk'}
+              </button>
+            </div>
+          </form>
 
-        {/* 5. Bagian Pengurus RT (Tidak berubah) */}
-        <section>
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Pengurus RT 007</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {mockOfficers.map(officer => (
-              <OfficerCard 
-                key={officer.name}
-                name={officer.name}
-                position={officer.position}
-                imageUrl={officer.imageUrl}
-              />
-            ))}
-          </div>
-        </section>
-
-      </main>
-
-      {/* Footer Sederhana (Tidak berubah) */}
-      <footer className="text-center p-6 mt-8 text-gray-500 text-sm">
-        <p>&copy; {new Date().getFullYear()} RT 007 Griya Mulya Asri. All rights reserved.</p>
-      </footer>
+          <p className="mt-10 text-center text-sm text-gray-500">
+            Belum punya akun?{' '}
+            <a href="https://wa.me/6281234567890" className="font-semibold leading-6 text-green-600 hover:text-green-500">
+              Hubungi Sekretaris RT
+            </a>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
