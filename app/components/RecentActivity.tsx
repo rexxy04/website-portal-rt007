@@ -4,28 +4,34 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-// Data Gambar & Kegiatan (Menggunakan file yang Anda sebutkan)
+// Data Gambar & Kegiatan
 const slides = [
   {
     id: 1,
     title: "Kegiatan WPP 1",
     description: "Dokumentasi kegiatan warga di area WPP 1.",
+    // FIX: Format gambar .png sesuai request
     image: "/images/wpp1.png", 
-    link: "/kegiatan/wpp-1"
+    // FIX: Link diarahkan ke folder '/activity/' (bukan '/kegiatan/')
+    link: "/activity/wpp-1"
   },
   {
     id: 2,
     title: "Kunjungan Wil-House",
     description: "Kunjungan rutin dan pemeriksaan fasilitas.",
+    // FIX: Format gambar .png sesuai request
     image: "/images/wil-house.png",
-    link: "/kegiatan/wil-house"
+    // FIX: Link diarahkan ke folder '/activity/'
+    link: "/activity/wil-house"
   },
   {
     id: 3,
     title: "Kegiatan WPP 2",
     description: "Gotong royong membersihkan lingkungan WPP 2.",
+    // FIX: Format gambar .jpg sesuai request
     image: "/images/wpp2.jpg",
-    link: "/kegiatan/wpp-2"
+    // FIX: Link diarahkan ke folder '/activity/'
+    link: "/activity/wpp-2"
   }
 ];
 
@@ -38,20 +44,17 @@ export default function RecentActivity() {
       setCurrentIndex((prevIndex) => 
         prevIndex === slides.length - 1 ? 0 : prevIndex + 1
       );
-    }, 2000); // 2000ms = 2 detik
+    }, 2000); 
 
-    return () => clearInterval(interval); // Bersihkan timer saat komponen unmount
+    return () => clearInterval(interval);
   }, []);
 
-  // Fungsi untuk klik dot manual
   const goToSlide = (index: number) => {
     setCurrentIndex(index);
   };
 
   return (
-        // KITA UBAH:
-    // pt-24 (6rem) -> Untuk Mobile. (6rem padding - 4rem margin negatif = 2rem jarak bersih)
-    // md:pt-32 (8rem) -> Untuk Desktop. Biar desktop makin lega.
+    // Padding disesuaikan agar tidak tertutup header mobile
     <section className="w-full max-w-6xl mx-auto px-4 pb-8 pt-24 md:pt-32">
       
       {/* Judul Section */}
@@ -67,23 +70,18 @@ export default function RecentActivity() {
       {/* --- 1. MAIN SLIDER (Carousel) --- */}
       <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden shadow-xl group bg-gray-200">
         
-        {/* Link Pembungkus agar bisa diklik */}
         <Link href={slides[currentIndex].link} className="block w-full h-full relative">
           
-          {/* Gambar Background */}
           <Image
             src={slides[currentIndex].image}
             alt={slides[currentIndex].title}
             fill
-            // Pastikan class transition ini ada agar animasi smooth
             className="object-cover transition-all duration-700 ease-in-out transform hover:scale-105"
             priority
           />
           
-          {/* Overlay Gradient Hitam (Agar teks terbaca) */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
 
-          {/* Teks di atas Slider */}
           <div className="absolute bottom-8 left-6 right-6 text-white">
             <h3 className="text-xl md:text-3xl font-bold mb-2 drop-shadow-md">
               {slides[currentIndex].title}
@@ -94,7 +92,7 @@ export default function RecentActivity() {
           </div>
         </Link>
 
-        {/* Dots Navigation (Indikator Titik) */}
+        {/* Dots Navigation */}
         <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
           {slides.map((_, index) => (
             <button
@@ -102,7 +100,7 @@ export default function RecentActivity() {
               onClick={() => goToSlide(index)}
               className={`h-2 rounded-full transition-all duration-500 ease-in-out ${
                 currentIndex === index 
-                  ? "bg-green-500 w-8" // Indikator aktif lebih panjang
+                  ? "bg-green-500 w-8" 
                   : "bg-white/50 w-2 hover:bg-white"
               }`}
               aria-label={`Go to slide ${index + 1}`}
