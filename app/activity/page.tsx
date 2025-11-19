@@ -1,37 +1,50 @@
-import React from 'react';
+"use client"; // 1. Wajib jadi Client Component untuk fetch data di useEffect
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import Header from '../components/Header'; // Sesuaikan path jika perlu
-
-// --- DATA KEGIATAN (Disesuaikan dengan nama file gambar Anda) ---
-const activitiesList = [
-  {
-    slug: 'wpp-1',
-    title: "Kegiatan Seru Warga WPP 1",
-    date: "15 November 2024",
-    // FIX: Menggunakan format .png sesuai request
-    image: "/images/wpp1.png", 
-    excerpt: "Kegiatan kerja bakti rutin bulanan untuk menjaga kebersihan dan keindahan lingkungan perumahan WPP 1."
-  },
-  {
-    slug: 'wil-house',
-    title: "Kunjungan Rutin Wil-House",
-    date: "20 November 2024",
-    // FIX: Menggunakan format .png sesuai request
-    image: "/images/wil-house.png",
-    excerpt: "Pemeriksaan rutin fasilitas umum dan keamanan di area Wil-House untuk memastikan kenyamanan warga."
-  },
-  {
-    slug: 'wpp-2',
-    title: "Gotong Royong WPP 2",
-    date: "10 Desember 2024",
-    // FIX: Menggunakan format .jpg sesuai request
-    image: "/images/wpp2.jpg",
-    excerpt: "Membersihkan saluran air untuk mencegah banjir saat musim hujan tiba di area WPP 2."
-  }
-];
+import Header from '../components/Header';
+import { db } from '../lib/firebase'; // 2. Import konfigurasi db kita
+import { collection, getDocs } from 'firebase/firestore'; // 3. Import fungsi Firestore
 
 export default function ActivitiesIndexPage() {
+  // State untuk menampung data kegiatan
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 4. Fetch Data saat halaman dibuka
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        // Mengambil data dari collection bernama "activities"
+        const querySnapshot = await getDocs(collection(db, "activities"));
+        
+        // Mapping data dari format Firestore ke format array biasa
+        const dataList = querySnapshot.docs.map(doc => ({
+          id: doc.id,     // ID dokumen (acak dari firebase)
+          ...doc.data()   // Data isi (title, image, date, slug, dll)
+        }));
+
+        setActivities(dataList);
+      } catch (error) {
+        console.error("Error fetching activities:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, []);
+
+  // Tampilan Loading sederhana
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <p className="text-gray-500 animate-pulse">Memuat Data Kegiatan...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <Header />
@@ -50,40 +63,48 @@ export default function ActivitiesIndexPage() {
 
         {/* Grid Daftar Kegiatan */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {activitiesList.map((item) => (
-            <Link 
-              href={`/activity/${item.slug}`} // Link ke folder [slug]
-              key={item.slug} 
-              className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
-            >
-              {/* Gambar Thumbnail */}
-              <div className="relative h-48 w-full overflow-hidden">
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              </div>
-
-              {/* Konten Kartu */}
-              <div className="p-5">
-                <p className="text-xs font-bold text-orange-500 mb-2 uppercase tracking-wider">
-                  {item.date}
-                </p>
-                <h2 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-green-700 transition-colors">
-                  {item.title}
-                </h2>
-                <p className="text-gray-600 text-sm line-clamp-3">
-                  {item.excerpt}
-                </p>
-                <div className="mt-4 text-green-600 text-sm font-medium flex items-center gap-1">
-                  Baca Selengkapnya
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          {activities.length === 0 ? (
+            <p className="text-center col-span-3 text-gray-400 py-10">
+              Belum ada data kegiatan.
+            </p>
+          ) : (
+            activities.map((item) => (
+              <Link 
+                // Pastikan di database nanti ada field 'slug'
+                href={`/activity/${item.slug}`} 
+                key={item.id} 
+                className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
+              >
+                {/* Gambar Thumbnail */}
+                <div className="relative h-48 w-full overflow-hidden bg-gray-200">
+                  <Image
+                    // Gunakan fallback image jika field image kosong/error
+                    src={item.image || '/images/hero-bg.jpg'} 
+                    alt={item.title || 'Kegiatan'}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
                 </div>
-              </div>
-            </Link>
-          ))}
+
+                {/* Konten Kartu */}
+                <div className="p-5">
+                  <p className="text-xs font-bold text-orange-500 mb-2 uppercase tracking-wider">
+                    {item.date}
+                  </p>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-green-700 transition-colors">
+                    {item.title}
+                  </h2>
+                  <p className="text-gray-600 text-sm line-clamp-3">
+                    {item.excerpt}
+                  </p>
+                  <div className="mt-4 text-green-600 text-sm font-medium flex items-center gap-1">
+                    Baca Selengkapnya
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
         </div>
 
       </main>
