@@ -1,15 +1,12 @@
 "use client";
 
-import Link from 'next/link';
+import Link from 'next/link'; 
 import { signOut } from 'firebase/auth';
 import { useAuth } from '../context/authcontext';
 import { auth } from '../lib/firebase';
-import { useState } from 'react';
 
 export default function Header() {
   const { user, loading } = useAuth();
-  
-  // const [activeSection, setActiveSection] = useState(''); 
 
   const handleLogout = async () => {
     try {
@@ -19,11 +16,34 @@ export default function Header() {
     }
   };
 
+  // KONFIGURASI MENU NAVIGASI
   const navItems = [
-    { name: 'Aktivitas', href: '#recent-activity', icon: <ActivityIcon /> },
-    { name: 'Menu Cepat', href: '#quick-menu', icon: <GridIcon /> },
-    { name: 'Jadwal', href: '#schedule', icon: <CalendarIcon /> },
-    { name: 'Pengurus', href: '#officers', icon: <UsersIcon /> },
+    // 1. Ke Halaman Baru (Gunakan <Link>)
+    { 
+      name: 'Aktivitas', 
+      href: '/activity', // Mengarah ke /app/activity/page.tsx
+      type: 'page',      // Penanda tipe link
+      icon: <ActivityIcon /> 
+    },
+    // 2. Ke Anchor di Home (Gunakan <a> dengan awalan /#)
+    { 
+      name: 'Menu Cepat', 
+      href: '/#quick-menu', // Tambahkan '/' agar bisa diakses dari halaman lain
+      type: 'anchor',
+      icon: <GridIcon /> 
+    },
+    { 
+      name: 'Jadwal', 
+      href: '/#schedule', 
+      type: 'anchor',
+      icon: <CalendarIcon /> 
+    },
+    { 
+      name: 'Pengurus', 
+      href: '/#officers', 
+      type: 'anchor',
+      icon: <UsersIcon /> 
+    },
   ];
 
   return (
@@ -33,27 +53,42 @@ export default function Header() {
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             
-            {/* Logo tetap pakai Link karena menuju root '/' */}
+            {/* Logo */}
             <Link href="/" className="text-2xl font-bold text-green-700 tracking-tighter">
               GMA
             </Link>
 
             {/* Navigasi Desktop */}
             <nav className="hidden md:flex items-center gap-6">
-              {navItems.map((item) => (
-                // GANTI <Link> DENGAN <a> DI SINI
-                // Tag <a> tidak akan memicu request ke server Next.js
-                <a 
-                  key={item.name}
-                  href={item.href}
-                  className="text-sm font-medium text-gray-600 hover:text-green-700 hover:underline underline-offset-4 transition-colors cursor-pointer"
-                >
-                  {item.name}
-                </a>
-              ))}
+              {navItems.map((item) => {
+                // LOGIKA HYBRID:
+                // Jika tipe 'page', pakai <Link> (Navigasi cepat Next.js)
+                // Jika tipe 'anchor', pakai <a> (Agar scroll akurat dan tidak spam server log)
+                if (item.type === 'page') {
+                  return (
+                    <Link 
+                      key={item.name}
+                      href={item.href}
+                      className="text-sm font-medium text-gray-600 hover:text-green-700 hover:underline underline-offset-4 transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                } else {
+                  return (
+                    <a 
+                      key={item.name}
+                      href={item.href}
+                      className="text-sm font-medium text-gray-600 hover:text-green-700 hover:underline underline-offset-4 transition-colors cursor-pointer"
+                    >
+                      {item.name}
+                    </a>
+                  );
+                }
+              })}
             </nav>
 
-            {/* Bagian User/Login tetap pakai Link */}
+            {/* User / Login */}
             <div className="flex items-center gap-4">
               {loading ? (
                 <div className="text-sm text-gray-500">...</div>
@@ -79,7 +114,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* --- 2. HEADER MOBILE --- */}
+      {/* --- 2. HEADER MOBILE (Logo Only) --- */}
       <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-sm shadow-sm md:hidden px-4 py-3 flex justify-between items-center">
          <Link href="/" className="text-xl font-bold text-green-700">GMA</Link>
          {!loading && !user && (
@@ -98,23 +133,33 @@ export default function Header() {
       <nav className="fixed bottom-0 left-0 z-50 w-full bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:hidden pb-safe">
         <div className="flex justify-around items-center h-16">
           
-           {/* Tombol Home, scroll ke paling atas */}
-           <a href="#" className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-green-600 focus:text-green-600">
+           {/* Tombol Home */}
+           <Link href="/" className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-green-600 focus:text-green-600">
             <HomeIcon />
             <span className="text-[10px] mt-1 font-medium">Beranda</span>
-          </a>
+          </Link>
 
-          {/* Mapping Nav Items dengan <a> */}
-          {navItems.map((item) => (
-            <a 
-              key={item.name}
-              href={item.href}
-              className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-green-600 focus:text-green-600"
-            >
-              {item.icon}
-              <span className="text-[10px] mt-1 font-medium">{item.name}</span>
-            </a>
-          ))}
+          {/* Nav Items Mapping */}
+          {navItems.map((item) => {
+            // Logika Hybrid yang sama untuk Mobile
+            const commonClasses = "flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-green-600 focus:text-green-600";
+            
+            if (item.type === 'page') {
+              return (
+                <Link key={item.name} href={item.href} className={commonClasses}>
+                  {item.icon}
+                  <span className="text-[10px] mt-1 font-medium">{item.name}</span>
+                </Link>
+              );
+            } else {
+              return (
+                <a key={item.name} href={item.href} className={commonClasses}>
+                  {item.icon}
+                  <span className="text-[10px] mt-1 font-medium">{item.name}</span>
+                </a>
+              );
+            }
+          })}
 
         </div>
       </nav>
@@ -122,7 +167,7 @@ export default function Header() {
   );
 }
 
-// --- ICON COMPONENTS ---
+// --- ICON COMPONENTS (Tetap Sama) ---
 function HomeIcon() {
   return (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>)
 }
