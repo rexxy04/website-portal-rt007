@@ -2,7 +2,8 @@
 
 import Header from './components/Header';
 import Hero from './components/Hero';
-import ActivityCard from './components/ActivityCard';
+// 1. Ganti ActivityCard dengan RecentActivity
+import RecentActivity from './components/RecentActivity'; 
 import QuickLinkCard from './components/QuickLinkCard';
 import ScheduleItem from './components/ScheduleItem';
 import OfficerCard from './components/OfficerCard';
@@ -12,13 +13,8 @@ import { useAuth } from './context/authcontext';
 import Link from 'next/link';
 
 // --- DATA TIRUAN (MOCK DATA) ---
-const mockActivities = [
-  { id: '1', title: 'Kerja Bakti Bulanan - Persiapan 17an', date: '10 Juli 2024' },
-  { id: '2', title: 'Rapat RT Bulanan (Online)', date: '5 Juli 2024' },
-  { id: '3', title: 'Pengumpulan Dana Qurban Idul Adha', date: '1 Juli 2024' },
-];
+// Catatan: mockActivities dihapus karena RecentActivity sudah punya datanya sendiri.
 
-// FIX: Menggunakan URL placeholder untuk MENGHENTIKAN error 404
 const mockOfficers = [
   { name: 'Bpk. H. Ahmad', position: 'Ketua RT 007', imageUrl: 'https://placehold.co/96x96/666/white?text=Ahmad' },
   { name: 'Bpk. Budi Santoso', position: 'Wakil Ketua RT', imageUrl: 'https://placehold.co/96x96/666/white?text=Budi' },
@@ -88,22 +84,20 @@ export default function HomePage() {
   const { user, loading } = useAuth();
 
   return (
-    // Container utama halaman dengan latar belakang abu-abu muda
     <div className="min-h-screen bg-gray-100">
       
-      {/* 1. Header (Gunakan kode Header dari respons sebelumnya) */}
+      {/* 1. Header */}
       <Header />
 
-      {/* 2. Hero Section (Gunakan kode Hero dari respons sebelumnya) */}
+      {/* 2. Hero Section */}
       <Hero />
 
       {/* 3. Konten Utama */}
-      {/* FIX: Menggunakan max-w-6xl agar lebih lebar */}
       <main className="relative z-10 max-w-6xl mx-auto p-4 md:p-6 space-y-8 -mt-16">
 
         {/* Bagian "Bayar Iuran" - Muncul jika sudah login */}
         {user && !loading && (
-          <Link href="/bayar-iuran" className="block w-full">
+          <Link href="/bayar-iuran" className="block w-full mb-6">
             <div className="flex items-center justify-between p-4 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition-colors">
               <div>
                 <h2 className="font-bold text-lg">Pembayaran Iuran</h2>
@@ -116,35 +110,36 @@ export default function HomePage() {
           </Link>
         )}
 
-        {/* 3. Bagian Aktivitas Terbaru */}
-        <section>
-          {/* Komponen Card Aktivitas */}
-          <ActivityCard activities={mockActivities} />
+        {/* 4. Bagian Aktivitas Terbaru (SLIDER BARU) */}
+        {/* Kita menghapus <section> lama dan menggantinya dengan komponen ini */}
+        <RecentActivity />
 
-          {/* Grid untuk 3 Kartu Kecil di bawahnya */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <QuickLinkCard 
-              title="Bayar Iuran"
-              description="Akses fitur iuran warga"
-              href={user ? "/bayar-iuran" : "/login"} // Link kondisional
-              icon={<WalletIcon />}
-            />
-            <QuickLinkCard 
-              title="Data Warga"
-              description="Lihat direktori warga"
-              href="/data-warga" // Buat halaman ini nanti
-              icon={<UsersIcon />}
-            />
-            <QuickLinkCard 
-              title="Lapor Darurat"
-              description="Hubungi petugas RT"
-              href="/lapor-darurat" // Buat halaman ini nanti
-              icon={<IconPlaceholder />}
-            />
-          </div>
+        {/* 5. Menu Cepat (Utility) - Tetap dipertahankan untuk navigasi fitur */}
+        <section className="mt-8">
+            <h2 className="text-xl font-bold text-gray-800 mb-4 px-2">Menu Cepat</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <QuickLinkCard 
+                title="Bayar Iuran"
+                description="Akses fitur iuran warga"
+                href={user ? "/bayar-iuran" : "/login"} 
+                icon={<WalletIcon />}
+              />
+              <QuickLinkCard 
+                title="Data Warga"
+                description="Lihat direktori warga"
+                href="/data-warga" 
+                icon={<UsersIcon />}
+              />
+              <QuickLinkCard 
+                title="Lapor Darurat"
+                description="Hubungi petugas RT"
+                href="/lapor-darurat" 
+                icon={<IconPlaceholder />}
+              />
+            </div>
         </section>
 
-        {/* 4. Bagian Jadwal Kegiatan */}
+        {/* 6. Bagian Jadwal Kegiatan */}
         <section>
           <h2 className="text-xl font-bold text-gray-800 mb-4">Jadwal Kegiatan</h2>
           <ul className="space-y-3">
@@ -161,7 +156,7 @@ export default function HomePage() {
           </ul>
         </section>
 
-        {/* 5. Bagian Pengurus RT */}
+        {/* 7. Bagian Pengurus RT */}
         <section>
           <h2 className="text-xl font-bold text-gray-800 mb-4">Pengurus RT 007</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -178,7 +173,7 @@ export default function HomePage() {
 
       </main>
 
-      {/* Footer Sederhana */}
+      {/* Footer */}
       <footer className="text-center p-6 mt-8 text-gray-500 text-sm">
         <p>&copy; {new Date().getFullYear()} RT 007 Griya Mulya Asri. All rights reserved.</p>
       </footer>
