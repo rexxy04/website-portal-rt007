@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useAuth } from '../context/authcontext';
 import { useRouter } from 'next/navigation';
-import AdminHeader from '../components/AdminHeader'; // <--- Ganti Header Biasa dengan AdminHeader
+import AdminHeader from '../components/AdminHeader'; // <--- Header Khusus Admin
 import Link from 'next/link';
 
 export default function AdminDashboard() {
@@ -11,14 +11,10 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    // 1. Tunggu loading selesai dulu
     if (!loading) {
-      // 2. Jika tidak ada user login, tendang ke login
       if (!user) {
         router.push('/login');
-      } 
-      // 3. Jika user ada, TAPI role-nya bukan admin, tendang ke home
-      else if (userProfile?.role !== 'admin') {
+      } else if (userProfile?.role !== 'admin') {
         alert("Maaf, Anda tidak memiliki akses admin.");
         router.push('/');
       }
@@ -29,10 +25,9 @@ export default function AdminDashboard() {
     return <div className="min-h-screen flex justify-center items-center text-gray-500">Memeriksa akses...</div>;
   }
 
-  // Jika sampai sini, berarti dia ADMIN
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
-      {/* Gunakan AdminHeader agar konsisten */}
+      {/* Header Admin */}
       <AdminHeader />
       
       <div className="max-w-6xl mx-auto px-4 py-8 mt-6">
@@ -41,7 +36,7 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Selamat datang, <span className="font-bold text-emerald-600">{userProfile?.nama || user?.email}</span>.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* Menu 1: Kelola Kegiatan */}
           <Link href="/admin/kegiatan" className="group">
@@ -50,29 +45,40 @@ export default function AdminDashboard() {
                 📢
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-800 group-hover:text-emerald-600 transition-colors">Kelola Kegiatan</h3>
-              <p className="text-sm text-gray-500">Tambah, edit, atau hapus berita kegiatan warga.</p>
+              <p className="text-sm text-gray-500">Update berita & kegiatan desa.</p>
             </div>
           </Link>
 
-          {/* Menu 2: Data Warga */}
+          {/* Menu 2: Keuangan / Iuran (BARU) */}
+          <Link href="/admin/keuangan" className="group">
+            <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer h-full border border-transparent hover:border-emerald-500">
+              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4 text-emerald-600 font-bold text-xl group-hover:scale-110 transition-transform">
+                💰
+              </div>
+              <h3 className="font-bold text-lg mb-2 text-gray-800 group-hover:text-emerald-600 transition-colors">Keuangan Warga</h3>
+              <p className="text-sm text-gray-500">Cek iuran & status pembayaran.</p>
+            </div>
+          </Link>
+
+          {/* Menu 3: Data Warga */}
           <Link href="/admin/warga" className="group">
             <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer h-full border border-transparent hover:border-blue-200">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 text-blue-600 font-bold text-xl group-hover:scale-110 transition-transform">
                 👥
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-800 group-hover:text-blue-600 transition-colors">Data Warga</h3>
-              <p className="text-sm text-gray-500">Lihat daftar warga dan status iuran.</p>
+              <p className="text-sm text-gray-500">Database penduduk RT 007.</p>
             </div>
           </Link>
 
-          {/* Menu 3: Laporan Masuk */}
+          {/* Menu 4: Laporan Masuk */}
           <Link href="/admin/laporan" className="group">
             <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer h-full border border-transparent hover:border-red-200">
                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4 text-red-600 font-bold text-xl group-hover:scale-110 transition-transform">
                 🚨
               </div>
-              <h3 className="font-bold text-lg mb-2 text-gray-800 group-hover:text-red-600 transition-colors">Laporan Darurat</h3>
-              <p className="text-sm text-gray-500">Cek laporan masalah yang masuk dari warga.</p>
+              <h3 className="font-bold text-lg mb-2 text-gray-800 group-hover:text-red-600 transition-colors">Laporan</h3>
+              <p className="text-sm text-gray-500">Aduan & laporan darurat.</p>
             </div>
           </Link>
 

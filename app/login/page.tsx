@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../lib/firebase'; // Tambah import db
-import { doc, getDoc } from 'firebase/firestore'; // Tambah import firestore
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '../components/Header';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/app/lib/firebase';
+import { useAuth } from '@/app/context/authcontext';
+import Image from 'next/image'; 
+
+interface FirebaseError extends Error {
+  code?: string;
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,6 +18,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/'); 
+    }
+  }, [user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,119 +33,113 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 1. Login ke Authentication
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const loggedUser = userCredential.user;
 
-      // 2. Cek Role di Firestore
-      // Kita cari dokumen user berdasarkan UID-nya
-      const docRef = doc(db, "users", user.uid);
+      const docRef = doc(db, "users", loggedUser.uid);
       const docSnap = await getDoc(docRef);
-
+      
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        
-        // 3. Logika Redirect Berdasarkan Role
         if (userData.role === 'admin') {
-          console.log("Login sebagai Admin");
-          router.push('/admin'); // Admin masuk dashboard
+          router.push('/admin'); 
         } else {
-          console.log("Login sebagai Warga");
-          router.push('/'); // Warga masuk home
+          router.push('/'); 
         }
       } else {
-        // Jika user ada di Auth tapi belum ada datanya di Firestore (kasus jarang)
-        // Anggap sebagai warga biasa
         router.push('/');
       }
 
-    } catch (err: any) {
-      console.error(err);
-      setError('Email atau password salah. Silakan coba lagi.');
+    } catch (err: unknown) { 
+      const firebaseErr = err as FirebaseError;
+      
+      // Baris console.error DIHAPUS agar console bersih
+      
+      switch (firebaseErr.code) {
+        case 'auth/invalid-credential':
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+          setError('Email atau password salah. Silakan coba lagi.');
+          break;
+        case 'auth/too-many-requests':
+          setError('Terlalu banyak percobaan login gagal. Tunggu beberapa saat.');
+          break;
+        case 'auth/user-disabled':
+          setError('Akun ini telah dinonaktifkan oleh admin.');
+          break;
+        default:
+          setError('Gagal login. Periksa koneksi internet Anda.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // ... (SISA KODE TAMPILAN JSX TETAP SAMA, TIDAK PERLU DIUBAH) ...
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <div className="flex flex-col items-center justify-center px-6 py-12 lg:px-8 mt-10">
-        <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-green-900">
-            Masuk ke Portal Warga
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Silakan login menggunakan akun yang telah diberikan oleh Pengurus RT.
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        
+        <div className="bg-emerald-600 p-8 text-center">
+          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+             <span className="text-3xl">🏠</span> 
+          </div>
+          <h2 className="text-2xl font-bold text-white">Portal Warga</h2>
+          <p className="text-emerald-100 text-sm">RT 007 / RW 005</p>
         </div>
 
-        <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-          <form className="space-y-6" onSubmit={handleLogin}>
+        <div className="p-8">
+          <form onSubmit={handleLogin} className="space-y-5">
             
+            {/* Alert Error UI (Akan tetap muncul untuk user) */}
             {error && (
-              <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
+              <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                Email Warga
-              </label>
-              <div className="mt-2">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
-                />
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                type="email"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+                placeholder="nama@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
 
             <div>
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
-                  Password
-                </label>
-              </div>
-              <div className="mt-2">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
-                />
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input
+                type="password"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex w-full justify-center rounded-md bg-green-600 px-3 py-2.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Memproses...' : 'Masuk'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 rounded-lg text-white font-bold text-lg transition shadow-lg
+                ${loading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-200'}
+              `}
+            >
+              {loading ? 'Memproses...' : 'Masuk'}
+            </button>
           </form>
 
-          <p className="mt-10 text-center text-sm text-gray-500">
-            Belum punya akun?{' '}
-            <a href="#" className="font-semibold leading-6 text-green-600 hover:text-green-500">
-              Hubungi Sekretaris RT
-            </a>
-          </p>
+          <div className="mt-6 text-center text-sm text-gray-500">
+            Belum punya akun? <span className="text-emerald-600 font-bold cursor-pointer hover:underline">Hubungi Ketua RT</span>
+          </div>
         </div>
       </div>
     </div>
