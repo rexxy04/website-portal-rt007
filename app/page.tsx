@@ -47,7 +47,7 @@ export default function HomePage() {
 
         {/* Bagian "Bayar Iuran" */}
         {user && !loading && (
-          <Link href="/bayar-iuran" className="block w-full mb-6">
+          <Link href="/payment" className="block w-full mb-6">
             <div className="flex items-center justify-between p-4 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition-colors">
               <div>
                 <h2 className="font-bold text-lg">Pembayaran Iuran</h2>
