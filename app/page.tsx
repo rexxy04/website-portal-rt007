@@ -76,12 +76,6 @@ export default function HomePage() {
                 icon={<WalletIcon />}
               />
               <QuickLinkCard 
-                title="Data Warga"
-                description="Lihat direktori warga"
-                href="/data-warga" 
-                icon={<UsersIcon />}
-              />
-              <QuickLinkCard 
                 title="Lapor Darurat"
                 description="Hubungi petugas RT"
                 href="/lapor-darurat" 
